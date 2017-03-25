@@ -50,17 +50,18 @@ public:
 		//[]
 		int i = 0;
 		cout << "in Bra [] " << endl;
+		parent->left = left;
 		if (s[1] == '^')
 		{	
 			i = 3;
-			parent->right = right;
+
 			int j, k= 0;
 			while(j<10)
 			{
 				//edge = null 이나 특정한 문자로 초기화 한다.
 				if (j != s.at(3))
 				{
-					right->edgeNum[k] = j;
+					left->edgeNum[k] = j;
 				}
 				k++;
 				j++;
@@ -72,7 +73,7 @@ public:
 			while (s.at(i) != ']')
 			{
 				//edge = null 이나 특정한 문자로 초기화 한다.
-				right->edgeNum[i - 2] = s.at(i) - '0';
+				left->edgeNum[i - 2] = s.at(i) - '0';
 				i++;
 			}
 		}
