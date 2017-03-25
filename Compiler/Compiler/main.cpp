@@ -8,9 +8,10 @@ using namespace std;
 // struct
 typedef struct eNFAs
 {
-	// e À¸·Î ÃÊ±âÈ­
-	//int state; 		// ¾î¶»°Ô ¾²Áö..?
-	char edge = 'e';		// [] edge °¡ ¿©·¯ °³ ÀÖ¾î¾ß ÇÔ..?
+	// e Ã€Â¸Â·Ã ÃƒÃŠÂ±Ã¢ÃˆÂ­
+	//int state; 		// Â¾Ã®Â¶Â»Â°Ã” Â¾Â²ÃÃ¶..?
+	char edge = 'e';		// [] edge Â°Â¡ Â¿Â©Â·Â¯ Â°Â³ Ã€Ã–Â¾Ã®Â¾ÃŸ Ã‡Ã”..?
+	int edgeNum[10] = { -1 };
 	bool isAccept = false;
 	//vector<eNFAs*> child;
 	struct eNFAs* left = NULL;
@@ -19,6 +20,7 @@ typedef struct eNFAs
 
 // function declare
 eNFA* RE2eNFA(string S);
+bool isValidRE(std::string str);
 
 // class declare
 class Pa;
@@ -35,7 +37,7 @@ public:
 		return parent;
 	}
 protected:
-	eNFA* parent = (eNFA*)malloc(sizeof(eNFA));		// °¢ ÀÎ½ºÅÏ½º ¸¸´Ù ÃÊ±âÈ­ ½ÃÄÑ¼­ »ç¿ëÇÒ °Å (Á¦ÀÏ ºÎ¸ğ)
+	eNFA* parent = (eNFA*)malloc(sizeof(eNFA));		// Â°Â¢ Ã€ÃÂ½ÂºÃ…ÃÂ½Âº Â¸Â¸Â´Ã™ ÃƒÃŠÂ±Ã¢ÃˆÂ­ Â½ÃƒÃ„Ã‘Â¼Â­ Â»Ã§Â¿Ã«Ã‡Ã’ Â°Ã… (ÃÂ¦Ã€Ã ÂºÃÂ¸Ã°)
 	eNFA* left = (eNFA*)malloc(sizeof(eNFA));
 	eNFA* right = (eNFA*)malloc(sizeof(eNFA));
 };
@@ -48,9 +50,30 @@ public:
 		//[]
 
 		cout << "in Bra [] " << endl;
-		s = s.substr(2, s.length());
+		if (s[1] == '^')
+		{
+			int i = 2;
+			while (s.at(i) != ']')
+			{
+				//edge = null ì´ë‚˜ íŠ¹ì •í•œ ë¬¸ìë¡œ ì´ˆê¸°í™” í•œë‹¤.
+				right->edgeNum[i - 2] = s.at(i) - '0';
+				i++;
+			}
+			left->edge = '^';
+		}	
+		else
+		{
+			int i = 1;
+			while (s.at(i) != ']')
+			{
+				//edge = null ì´ë‚˜ íŠ¹ì •í•œ ë¬¸ìë¡œ ì´ˆê¸°í™” í•œë‹¤.
+				right->edgeNum[i - 2] = s.at(i) - '0';
+				i++;
+			}
+		}
 
-		// ] ´İÀ» ¶§ ÀÔ½Ç·Ğ ÀÌ¶û accept Ã³¸®
+		s = s.substr(i, s.length());
+
 		return s;
 	}
 };
@@ -77,14 +100,14 @@ public:
 
 			cout << "end ([]" << endl;
 
-			// ([] ±îÁö ÇÑ »óÅÂ.
+			// ([] Â±Ã®ÃÃ¶ Ã‡Ã‘ Â»Ã³Ã…Ã‚.
 			if (s[0] == ')')
 			{
 				cout << "end ([])*" << endl;
 
-				// ([])* ÇüÅÂ
+				// ([])* Ã‡Ã¼Ã…Ã‚
 				parent->left = b.geteNFA();
-				// ÀÌ°Å ¸Ç ¸¶Áö¸· ³ëµå¸¦ parent¿¡¿¬°á ÇÏ°í ½ÍÀ½..¤Ğ
+				// Ã€ÃŒÂ°Ã… Â¸Ã‡ Â¸Â¶ÃÃ¶Â¸Â· Â³Ã«ÂµÃ¥Â¸Â¦ parentÂ¿Â¡Â¿Â¬Â°Ã¡ Ã‡ÃÂ°Ã­ Â½ÃÃ€Â½..Â¤Ã
 				parent->left->left = parent;
 
 				return s.substr(2, s.length());
@@ -93,16 +116,16 @@ public:
 			{
 				cout << "start ([]I" << endl;
 
-				// ([]|) ÇüÅÂ
+				// ([]|) Ã‡Ã¼Ã…Ã‚
 				parent->left = b.geteNFA();
 				s = s.substr(1, s.length());
 
-				// ¿À¸¥ÂÊ [] read
+				// Â¿Ã€Â¸Â¥Ã‚ÃŠ [] read
 				if (s[0] == '[')
 				{
 					cout << "start ([]|[ " << endl;
 
-					// ([]|[]) ÇüÅÂ
+					// ([]|[]) Ã‡Ã¼Ã…Ã‚
 					Bra b;
 					s = b.read(s);
 					parent->right = b.geteNFA();
@@ -115,7 +138,7 @@ public:
 				{
 					cout << "start ([]|( " << endl;
 
-					// ([] | ()) ÇüÅÂ
+					// ([] | ()) Ã‡Ã¼Ã…Ã‚
 					Pa p;
 					s = p.read(s);
 					parent->right = p.geteNFA();
@@ -126,7 +149,7 @@ public:
 				}
 				else if (s[0] == 'e')
 				{
-					// ([]|e) ÇüÅÂ
+					// ([]|e) Ã‡Ã¼Ã…Ã‚
 					parent->right = right;
 
 					return s.substr(2, s.length());
@@ -134,12 +157,12 @@ public:
 			}
 			else if (s[0] == '.')
 			{
-				// ([].) ÇüÅÂ
+				// ([].) Ã‡Ã¼Ã…Ã‚
 				parent->left = b.geteNFA();
 				s = s.substr(1, s.length());
 				if (s[0] == '[')
 				{
-					// ([].[]) ÇüÅÂ
+					// ([].[]) Ã‡Ã¼Ã…Ã‚
 					Bra b;
 					s = b.read(s);
 					parent->left->left = b.geteNFA();
@@ -148,7 +171,7 @@ public:
 				}
 				else if (s[0] == '(')
 				{
-					// ([].()) ÇüÅÂ
+					// ([].()) Ã‡Ã¼Ã…Ã‚
 					Pa p;
 					s = p.read(s);
 					parent->left->left = p.geteNFA();
@@ -157,7 +180,7 @@ public:
 				}
 				else if (s[0] == 'e')
 				{
-					// ([].e) ÇüÅÂ
+					// ([].e) Ã‡Ã¼Ã…Ã‚
 					parent->left->left = right;
 
 					return s.substr(2, s.length());
@@ -171,25 +194,25 @@ public:
 			Pa p;
 			s = p.read(s);
 
-			// (() ±îÁö ÇÑ »óÅÂ.
+			// (() Â±Ã®ÃÃ¶ Ã‡Ã‘ Â»Ã³Ã…Ã‚.
 			if (s[0] == ')')
 			{
-				// (())* ÇüÅÂ
+				// (())* Ã‡Ã¼Ã…Ã‚
 				parent->left = p.geteNFA();
-				// parent ÀÇ ¸ğµç ÀÚ½Ä ³ëµåµéÀÌ ´Ù½Ã parent¸¦ °¡¸£Ä¡°Ô ÇØ¾ßÇÔ......?
-				// ¸Ç ¸¶Áö¸· ³ëµåÀÇ left°¡ ÀÖÀ¸¸é ¾È¿¡¼­ ´Ù¤Ó¤µ ´Ù¸¥°Å °¡¸£Å°´À ¤¤°Å¶ó¼­ right¿¡ ÇØÁÖ°í ¾Æ´Ï¸é left¿¡ ¿¬°á
+				// parent Ã€Ã‡ Â¸Ã°ÂµÃ§ Ã€ÃšÂ½Ã„ Â³Ã«ÂµÃ¥ÂµÃ©Ã€ÃŒ Â´Ã™Â½Ãƒ parentÂ¸Â¦ Â°Â¡Â¸Â£Ã„Â¡Â°Ã” Ã‡Ã˜Â¾ÃŸÃ‡Ã”......?
+				// Â¸Ã‡ Â¸Â¶ÃÃ¶Â¸Â· Â³Ã«ÂµÃ¥Ã€Ã‡ leftÂ°Â¡ Ã€Ã–Ã€Â¸Â¸Ã© Â¾ÃˆÂ¿Â¡Â¼Â­ Â´Ã™Â¤Ã“Â¤Âµ Â´Ã™Â¸Â¥Â°Ã… Â°Â¡Â¸Â£Ã…Â°Â´Ã€ Â¤Â¤Â°Ã…Â¶Ã³Â¼Â­ rightÂ¿Â¡ Ã‡Ã˜ÃÃ–Â°Ã­ Â¾Ã†Â´ÃÂ¸Ã© leftÂ¿Â¡ Â¿Â¬Â°Ã¡
 
 				return s.substr(2, s.length());
 			}
 			else if (s[0] == '|')
 			{
-				// (()|) ÇüÅÂ
+				// (()|) Ã‡Ã¼Ã…Ã‚
 				parent->left = p.geteNFA();
 				s = s.substr(1, s.length());
 
 				if (s[0] == '[')
 				{
-					// (()|[]) ÇüÅÂ
+					// (()|[]) Ã‡Ã¼Ã…Ã‚
 					Bra b;
 					s = b.read(s);
 					parent->right = b.geteNFA();
@@ -198,7 +221,7 @@ public:
 				}
 				else if (s[0] == '(')
 				{
-					// (()|()) ÇüÅÂ
+					// (()|()) Ã‡Ã¼Ã…Ã‚
 					Pa p;
 					s = p.read(s);
 					parent->right = p.geteNFA();
@@ -207,7 +230,7 @@ public:
 				}
 				else if (s[0] == 'e')
 				{
-					//(()|e) ÇüÅÂ
+					//(()|e) Ã‡Ã¼Ã…Ã‚
 					parent->right = right;
 
 					return s.substr(2, s.length());
@@ -216,12 +239,12 @@ public:
 			}
 			else if (s[0] == '.')
 			{
-				// (().) ÇüÅÂ
+				// (().) Ã‡Ã¼Ã…Ã‚
 				parent->left = p.geteNFA();
 				s = s.substr(1, s.length());
 				if (s[0] == '[')
 				{
-					//(().[]) ÇüÅÂ
+					//(().[]) Ã‡Ã¼Ã…Ã‚
 					Bra b;
 					s = b.read(s);
 					parent->left->left = b.geteNFA();
@@ -230,7 +253,7 @@ public:
 				}
 				else if (s[0] == '(')
 				{
-					// (().()) ÇüÅÂ
+					// (().()) Ã‡Ã¼Ã…Ã‚
 					Pa p;
 					s = p.read(s);
 					parent->left->left = p.geteNFA();
@@ -239,7 +262,7 @@ public:
 				}
 				else if (s[0] == 'e')
 				{
-					// (().e) ÇüÅÂ
+					// (().e) Ã‡Ã¼Ã…Ã‚
 					parent->left->left = right;
 
 					return s.substr(2, s.length());
@@ -248,12 +271,12 @@ public:
 		}
 		else if (s[0] == 'e')
 		{
-			// (e ÇüÅÂ....
+			// (e Ã‡Ã¼Ã…Ã‚....
 
 			s = s.substr(1, s.length());
 			if (s[0] == ')')
 			{
-				// (e)* ÇüÅÂ
+				// (e)* Ã‡Ã¼Ã…Ã‚
 				parent->left = left;
 				parent->left->left = parent;
 
@@ -261,12 +284,12 @@ public:
 			}
 			else if (s[0] == '|')
 			{
-				// (e| ÇüÅÂ
+				// (e| Ã‡Ã¼Ã…Ã‚
 				parent->left = left;
 				s = s.substr(1, s.length());
 				if (s[0] == '[')
 				{
-					// (e|[]) ÇüÅÂ
+					// (e|[]) Ã‡Ã¼Ã…Ã‚
 					Bra b;
 					s = b.read(s);
 					parent->right = b.geteNFA();
@@ -275,7 +298,7 @@ public:
 				}
 				else if (s[0] == '(')
 				{
-					// (e|()) ÇüÅÂ
+					// (e|()) Ã‡Ã¼Ã…Ã‚
 					Pa p;
 					s = p.read(s);
 					parent->right = p.geteNFA();
@@ -284,7 +307,7 @@ public:
 				}
 				else if (s[0] == 'e')
 				{
-					// (e|e) ÇüÅÂ
+					// (e|e) Ã‡Ã¼Ã…Ã‚
 					parent->right = right;
 
 					return s.substr(2, s.length());
@@ -292,12 +315,12 @@ public:
 			}
 			else if (s[0] == '.')
 			{
-				// (e. ÇüÅÂ
+				// (e. Ã‡Ã¼Ã…Ã‚
 				parent->left = left;
 				s = s.substr(1, s.length());
 				if (s[0] == '[')
 				{
-					// (e.[]) ÇüÅÂ
+					// (e.[]) Ã‡Ã¼Ã…Ã‚
 					Bra b;
 					s = b.read(s);
 					parent->left->left = b.geteNFA();
@@ -307,7 +330,7 @@ public:
 				}
 				else if (s[0] == '(')
 				{
-					// (e.()) ÇüÅÂ
+					// (e.()) Ã‡Ã¼Ã…Ã‚
 					Pa p;
 					s = p.read(s);
 					parent->left->left = p.geteNFA();
@@ -316,7 +339,7 @@ public:
 				}
 				else if (s[0] == 'e')
 				{
-					// (e.e) ÇüÅÂ
+					// (e.e) Ã‡Ã¼Ã…Ã‚
 					parent->left->left = right;
 
 					return s.substr(2, s.length());
@@ -326,7 +349,7 @@ public:
 	}
 };
 
-// epsilon ¹»·Î ³ªÅ¸³»Áö...?  >> 'e'
+// epsilon Â¹Â»Â·Ã Â³ÂªÃ…Â¸Â³Â»ÃÃ¶...?  >> 'e'
 
 int main()
 {
@@ -338,7 +361,7 @@ int main()
 	getline(cin, RE);
 
 	// RE -> eNFA
-	if (RE[0] != '(' && RE[0] != '[' && RE[0] != 'e')
+	if (isValidRE(RE) == false)
 	{
 		cout << "Valid input \n Program Exit." << endl;
 		return 0;
@@ -384,7 +407,7 @@ eNFA* RE2eNFA(string S)
 	}
 	else if (S[0] == 'e')		// epsilon
 	{
-		// epsilon..input.... Ã³¸®
+		// epsilon..input.... ÃƒÂ³Â¸Â®
 		eNFA* state = (eNFA*)malloc(sizeof(eNFA));
 		//state->state = 0;
 		state->edge = 'e';
@@ -398,4 +421,141 @@ eNFA* RE2eNFA(string S)
 
 	cout << "valid check err" << endl;
 	//return NULL;
+}
+
+
+bool isValidRE(std::string str)
+{
+	//parentheses ê´€ë ¨ ë³€ìˆ˜
+	int binOp = 0;		//operator *  ê°œìˆ˜
+	int unaOp = 0;		//operator . |  ê°œìˆ˜
+	int parFlag = 0;	//ì•ì—ì„œë¶€í„° ì½ì„ ë•Œ '(' ì˜ ê°œìˆ˜ê°€ ')' ë³´ë‹¤ í•­ìƒ ë§ê±°ë‚˜ ê°™ì•„ì•¼ í•œë‹¤.
+						//ì˜ˆë¥¼ ë“¤ì–´ )))((( -> invalid
+
+	int parOpenCnt = 0;
+	int parCloseCnt = 0;	//ìµœì¢… parentheses ê°œìˆ˜ ì„¸ê¸°
+
+							//bracket ê´€ë ¨ ë³€ìˆ˜
+	int braFlag = false;
+
+	int repeatOp = 0;
+	bool validCheck = true;
+	bool exclude = false;
+	bool number = false;
+
+	//RE
+	int numRE = 0;
+	for (int i = 0; i < str.length(); i++)
+	{
+		if (validCheck == false)
+			break;
+
+		char ch = str.at(i);
+		switch (ch)
+		{
+		case '(':
+			if (braFlag == true)
+				validCheck = false;
+			parFlag++;
+			parOpenCnt++;
+			break;
+		case ')':
+			parFlag--;
+			if (braFlag == true || parFlag < 0)
+				validCheck == false;
+			parCloseCnt++;
+			break;
+		case '*':
+			unaOp++;
+			if (numRE < 1 || braFlag)
+			{
+				validCheck = false;
+			}
+			else
+			{
+				numRE--;
+				if (str.at(i - 1) != ')')
+					validCheck = false;
+			}
+			break;
+		case '.': case '|':
+			if (parFlag <= 0 || numRE < 1 || braFlag)
+			{
+				validCheck = false;
+			}
+			else
+			{
+				binOp++;
+				numRE--;
+				if (str.at(i - 1) != 'e' && str.at(i - 1) != ')' && str.at(i - 1) != ']')
+					validCheck = false;
+			}
+			break;
+		case'[':
+			if (i > 1)
+			{
+				if (str.at(i - 1) != '(' && str.at(i - 1) != '.' && str.at(i - 1) != '|')
+					validCheck = false;
+			}
+			if (braFlag == true)
+				validCheck = false;
+			else braFlag = true;
+			break;
+		case ']':
+			if (braFlag != true || (number == false && exclude && (!number)))
+				validCheck = false;
+			else
+				braFlag = false;
+			exclude = false;
+			number = false;
+			if (parFlag > 0)
+				numRE++;
+			break;
+		case '0': case '1': case '2': case '3': case '4':
+		case '5': case '6': case '7': case '8': case '9':
+			if (braFlag == false || (exclude && number))		//if bracket is not open
+				validCheck = false;		//invalid
+			number = true;
+			break;
+		case '^':
+			if (braFlag == false || number || exclude)
+				validCheck = false;
+			exclude = true;
+			break;
+		case 'e':
+			if (i > 0)
+			{
+				if (str.at(i - 1) == '.' || str.at(i - 1) == '|' || str.at(i - 1) == '(')
+				{
+					;
+				}
+				else
+				{
+					validCheck = false;
+				}
+			}
+			if (numRE > 0)
+				validCheck = false;
+			if (braFlag == true)
+				validCheck = false;
+			numRE++;
+			break;
+		default: validCheck = false;
+			break;
+		}
+	}
+
+
+	//()-> ì—°ì‚°ì ê°œìˆ˜ì™€ ê´€ë ¨
+	if (parOpenCnt != parCloseCnt || parOpenCnt != (unaOp + binOp)
+		|| braFlag == true || !validCheck)
+	{
+		std::cout << "not RE" << std::endl;
+		return false;
+	}
+	else
+	{
+		return true;
+	}
+		
 }
