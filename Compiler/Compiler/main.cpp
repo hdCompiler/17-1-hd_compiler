@@ -50,10 +50,9 @@ public:
 	virtual string read(string s)
 	{
 		//[]
-
-		cout << "in Bra [] " << endl;
-
 		parent->state = state_num++;
+
+		cout << "in Bra [ :: " << parent->state << endl;
 
 		int i = 0;
 		if (s[1] == '^')
@@ -61,6 +60,9 @@ public:
 			parent->right = right;
 			
 			right->state = state_num++;	// state ..? right? left?
+
+
+			cout << "in Bra [] :: " << right->state << endl;
 			
 			i = 2;
 			while (s.at(i) != ']')
@@ -76,6 +78,8 @@ public:
 			parent->left = left;
 
 			left->state = state_num++;
+
+			cout << "in Bra [] :: " << left->state << endl;
 			
 			i = 1;
 			while (s.at(i) != ']')
@@ -97,12 +101,13 @@ class Pa : public Grammer		// parentheses
 public:
 	virtual string read(string s)
 	{
-		cout << "start (" << endl;
 
 		s = s.substr(1, s.length());
 
 		// parent init
 		parent->state = state_num++;
+
+		cout << "start ( :: " << parent->state << endl;
 
 		if (s[0] == '[')
 		{
