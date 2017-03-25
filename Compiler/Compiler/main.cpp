@@ -9,14 +9,16 @@ using namespace std;
 typedef struct eNFAs
 {
 	// e À¸·Î ÃÊ±âÈ­
-	//int state; 		// ¾î¶»°Ô ¾²Áö..?
+	int state; 		// ¾î¶»°Ô ¾²Áö..?
 	char edge = 'e';		// [] edge °¡ ¿©·¯ °³ ÀÖ¾î¾ß ÇÔ..?
 	int edgeNum[10] = { -1 };
 	bool isAccept = false;
-	//vector<eNFAs*> child;
 	struct eNFAs* left = NULL;
 	struct eNFAs* right = NULL;
 }eNFA;
+
+// global variable..?
+extern int state_num = 0;
 
 // function declare
 eNFA* RE2eNFA(string S);
@@ -50,9 +52,17 @@ public:
 		//[]
 
 		cout << "in Bra [] " << endl;
+
+		parent->state = state_num++;
+
+		int i = 0;
 		if (s[1] == '^')
 		{
-			int i = 2;
+			parent->right = right;
+			
+			right->state = state_num++;	// state ..? right? left?
+			
+			i = 2;
 			while (s.at(i) != ']')
 			{
 				//edge = null 이나 특정한 문자로 초기화 한다.
@@ -63,16 +73,20 @@ public:
 		}	
 		else
 		{
-			int i = 1;
+			parent->left = left;
+
+			left->state = state_num++;
+			
+			i = 1;
 			while (s.at(i) != ']')
 			{
 				//edge = null 이나 특정한 문자로 초기화 한다.
-				right->edgeNum[i - 2] = s.at(i) - '0';
+				left->edgeNum[i - 2] = s.at(i) - '0';
 				i++;
 			}
 		}
 
-		s = s.substr(i, s.length());
+		s = s.substr(i+1, s.length());
 
 		return s;
 	}
@@ -88,8 +102,7 @@ public:
 		s = s.substr(1, s.length());
 
 		// parent init
-		//
-		//
+		parent->state = state_num++;
 
 		if (s[0] == '[')
 		{
@@ -363,13 +376,17 @@ int main()
 	// RE -> eNFA
 	if (isValidRE(RE) == false)
 	{
-		cout << "Valid input \n Program Exit." << endl;
+		cout << "inValid input \n Program Exit." << endl;
 		return 0;
 	}
 	else
+	{
+		cout << " valid iput" << endl;
 		eNFA* eNFA = RE2eNFA(RE);
-
+	}
+	
 	// eNFA -> DFA
+
 
 
 	// loop
