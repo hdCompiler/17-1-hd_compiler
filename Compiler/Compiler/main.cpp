@@ -9,7 +9,7 @@ using namespace std;
 typedef struct eNFAs
 {
 	// e À¸·Î ÃÊ±âÈ­
-	//int state; 		// ¾î¶»°Ô ¾²Áö..?
+	int state; 		// ¾î¶»°Ô ¾²Áö..?
 	char edge = 'e';		// [] edge °¡ ¿©·¯ °³ ÀÖ¾î¾ß ÇÔ..?
 	int edgeNum[10] = { -1 };
 	bool isAccept = false;
@@ -48,22 +48,27 @@ public:
 	virtual string read(string s)
 	{
 		//[]
-
+		int i = 0;
 		cout << "in Bra [] " << endl;
 		if (s[1] == '^')
-		{
-			int i = 2;
-			while (s.at(i) != ']')
+		{	
+			i = 3;
+			parent->right = right;
+			int j, k= 0;
+			while(j<10)
 			{
 				//edge = null 이나 특정한 문자로 초기화 한다.
-				right->edgeNum[i - 2] = s.at(i) - '0';
-				i++;
+				if (j != s.at(3))
+				{
+					right->edgeNum[k] = j;
+				}
+				k++;
+				j++;
 			}
-			left->edge = '^';
-		}	
+		}
 		else
 		{
-			int i = 1;
+			i = 1;
 			while (s.at(i) != ']')
 			{
 				//edge = null 이나 특정한 문자로 초기화 한다.
@@ -72,7 +77,7 @@ public:
 			}
 		}
 
-		s = s.substr(i, s.length());
+		s = s.substr(i+1, s.length());
 
 		return s;
 	}
@@ -363,7 +368,7 @@ int main()
 	// RE -> eNFA
 	if (isValidRE(RE) == false)
 	{
-		cout << "Valid input \n Program Exit." << endl;
+		cout << "Invalid input \n Program Exit." << endl;
 		return 0;
 	}
 	else
@@ -557,5 +562,5 @@ bool isValidRE(std::string str)
 	{
 		return true;
 	}
-		
+
 }
