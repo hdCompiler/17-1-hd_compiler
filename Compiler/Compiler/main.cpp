@@ -46,7 +46,7 @@ public:
 protected:
 	eNFA* parent = (eNFA*)malloc(sizeof(eNFA));
 	eNFA* left = (eNFA*)malloc(sizeof(eNFA));
-	eNFA* right = (eNFA*)malloc(sizeof(eNFA));
+	eNFA* state = (eNFA*)malloc(sizeof(eNFA));
 };
 
 class Bra : public Grammer      // brakets
@@ -54,23 +54,21 @@ class Bra : public Grammer      // brakets
 public:
 	virtual string read(string s)
 	{
-		//[]
+		cout << "in Bra [ :: " << endl;
+
 		init_state(parent);
 		init_state(left);
-		init_state(right);
 
 		parent->state = state_num++;
-
-		cout << "in Bra [ :: " << parent->state << endl;
 
 		int i = 0;
 		if (s[1] == '^')
 		{
+			cout << "in Bra [^] :: " << endl;
+
 			left->isAccept = true;
 			left->state = state_num++;
 			parent->left = left;
-
-			cout << "in Bra [^] :: " << left->state << endl;
 
 			i = 3;
 			int j = 0, k = 0;
@@ -87,11 +85,11 @@ public:
 		}
 		else
 		{
+			cout << "in Bra [] :: " << endl;
+
 			left->isAccept = true;
 			left->state = state_num++;
 			parent->left = left;
-
-			cout << "in Bra [] :: " << left->state << endl;
 
 			i = 1;
 			while (s.at(i) != ']')
@@ -104,317 +102,430 @@ public:
 	}
 };
 
-
 class Pa : public Grammer		// parentheses
 {
 public:
+	void find_accept(eNFA* root)
+	{
+		if (root != NULL)
+		{
+			if (root->isAccept)
+			{
+				root->isAccept = false;
+				state = root;
+			}
+			else
+			{
+				find_accept(root->left);
+				if (root->left != NULL && root->right != NULL)
+					return;
+				else
+					find_accept(root->right);
+			}
+		}
+	}
+
 	virtual string read(string s)
 	{
 		init_state(parent);
 		init_state(left);
-		init_state(right);
+		init_state(state);
 
 		s = s.substr(1, s.length());
 
-		// parent init
-		parent->state = state_num++;
-
-		cout << "start ( :: " << parent->state << endl;
-
+#pragma region "([])"
 		if (s[0] == '[')
 		{
 			cout << "start ([" << endl;
 
+			// parent init
+			parent->state = state_num++;
+
 			Bra b;
 			s = b.read(s);
 
-			cout << "end ([]" << endl;
-
-			// ([] ±îÁö ÇÑ »óÅÂ.
 			if (s[0] == ')')
 			{
-				cout << "end ([])*" << endl;
+				cout << "start ([])*" << endl;
 
 				// parent->left -> e 일 때 accepting
 				left->isAccept = true;
 				left->state = state_num++;
-
 				parent->left = left;
 
-				// ([])* ÇüÅÂ
-				parent->left = b.geteNFA();
-				parent->left->left->left = parent;
-
-				// 아무것도 없어도 ㅇㅋ
-				right->isAccept = true;
-				right->state = state_num++;
-				right->left = parent;
-
-				parent->right = right;
+				// right set
+				parent->right = b.geteNFA();
+				find_accept(parent->right);
+				////state->flag = 0;
+				state->left = left;
+				state->right = parent->right;
 
 				return s.substr(2, s.length());
 			}
+#pragma region "([]|)"
 			else if (s[0] == '|')
 			{
 				cout << "start ([]I" << endl;
 
-				// ([]|) ÇüÅÂ
+				// left set
 				parent->left = b.geteNFA();
+
+				// accept state 설정
+				left->isAccept = true;
+				left->state = state_num++;
+
+				// state 연결
+				find_accept(parent->left);
+				////state->flag = 0;
+				state->left = left;
+
 				s = s.substr(1, s.length());
 
-				// ¿À¸¥ÂÊ [] read
 				if (s[0] == '[')
 				{
-					cout << "start ([]|[ " << endl;
+					cout << "start ([]|[]) " << endl;
 
-					// ([]|[]) ÇüÅÂ
 					Bra b;
 					s = b.read(s);
 					parent->right = b.geteNFA();
-
-					cout << "end ([]I[])" << endl;
+					find_accept(parent->right);
+					//state->flag = 0;
+					state->left = left;
 
 					return s.substr(1, s.length());
 				}
 				else if (s[0] == '(')
 				{
-					cout << "start ([]|( " << endl;
+					cout << "start ([]|()) " << endl;
 
-					// ([] | ()) ÇüÅÂ
 					Pa p;
 					s = p.read(s);
 					parent->right = p.geteNFA();
-
-					cout << "end ([]I())" << endl;
+					find_accept(parent->right);
+					//state->flag = 0;
+					state->left = left;
 
 					return s.substr(1, s.length());
 				}
 				else if (s[0] == 'e')
 				{
-					// ([]|e) ÇüÅÂ
-					right->isAccept = true;
-					right->state = state_num++;
-					parent->right = right;
+					cout << "start ([]|e) " << endl;
+
+					parent->right = left;
 
 					return s.substr(2, s.length());
 				}
 			}
+#pragma endregion
+
+#pragma region "([].)"
 			else if (s[0] == '.')
 			{
-				// ([].) ÇüÅÂ
+				cout << "start ([]." << endl;
+
+				// parent init
 				parent->left = b.geteNFA();
-				parent->left->left->isAccept = false;
 
 				s = s.substr(1, s.length());
+
 				if (s[0] == '[')
 				{
-					// ([].[]) ÇüÅÂ
+					cout << "start ([].[])" << endl;
+
 					Bra b;
 					s = b.read(s);
-					parent->left->left->left = b.geteNFA();
+					find_accept(parent->left);
+					//state->flag = 0;
+					state->left = b.geteNFA();
 
 					return s.substr(1, s.length());
 				}
 				else if (s[0] == '(')
 				{
-					// ([].()) ÇüÅÂ
+					cout << "start ([].())" << endl;
+
 					Pa p;
 					s = p.read(s);
-					parent->left->left->left = p.geteNFA();
+					find_accept(parent->left);
+					//state->flag = 0;
+					state->left = p.geteNFA();
 
 					return s.substr(1, s.length());
 				}
 				else if (s[0] == 'e')
 				{
-					// ([].e) ÇüÅÂ
-					right->isAccept = true;
-					right->state = state_num++;
-					parent->left->left->left = right;
+					cout << "start ([].e)" << endl;
+
+					left->isAccept = true;
+					left->state = state_num++;
+
+					find_accept(parent->left);
+					//state->flag = 0;
+					state->left = left;
 
 					return s.substr(2, s.length());
 				}
 			}
 		}
+#pragma endregion
+
+#pragma endregion
+
+#pragma region "(())"
 		else if (s[0] == '(')
 		{
-			cout << "start (" << endl;
+			cout << "start ((" << endl;
+
+			// parent init
+			parent->state = state_num++;
 
 			Pa p;
 			s = p.read(s);
 
-			// (() ±îÁö ÇÑ »óÅÂ.
 			if (s[0] == ')')
 			{
-				// (())* ÇüÅÂ
-				parent->left = p.geteNFA();
-				// parent ÀÇ ¸ðµç ÀÚ½Ä ³ëµåµéÀÌ ´Ù½Ã parent¸¦ °¡¸£Ä¡°Ô ÇØ¾ßÇÔ......?
-				// ¸Ç ¸¶Áö¸· ³ëµåÀÇ left°¡ ÀÖÀ¸¸é ¾È¿¡¼­ ´Ù¤Ó¤µ ´Ù¸¥°Å °¡¸£Å°´À ¤¤°Å¶ó¼­ right¿¡ ÇØÁÖ°í ¾Æ´Ï¸é left¿¡ ¿¬°á
+				cout << "start (())*" << endl;
+
+				// parent->left -> e 일 때 accepting
+				left->isAccept = true;
+				left->state = state_num++;
+				parent->left = left;
+
+				// right set
+				parent->right = p.geteNFA();
+				/*
+				if (parent->right->left->isAccept)
+				{
+					parent->right->left->isAccept = false;
+					parent->right->left->left = left;
+					
+				}*/
+				find_accept(parent->right);
+				//state->flag = 0;
+				state->left = left;
+				state->right = parent->right;
 
 				return s.substr(2, s.length());
 			}
+#pragma region "(()|)"
 			else if (s[0] == '|')
 			{
-				// (()|) ÇüÅÂ
+				cout << "start (()I" << endl;
+
 				parent->left = p.geteNFA();
+
+				// accept state 설정
+				left->isAccept = true;
+				left->state = state_num++;
+
+				// state 연결
+				find_accept(parent->left);
+				//state->flag = 0;
+				state->left = left;
+
 				s = s.substr(1, s.length());
 
 				if (s[0] == '[')
 				{
-					// (()|[]) ÇüÅÂ
+					cout << "start (()|[]) " << endl;
+
 					Bra b;
 					s = b.read(s);
 					parent->right = b.geteNFA();
+					find_accept(parent->right);
+					//state->flag = 0;
+					state->left = left;
 
 					return s.substr(1, s.length());
 				}
 				else if (s[0] == '(')
 				{
-					// (()|()) ÇüÅÂ
+					cout << "start (()|()) " << endl;
+
 					Pa p;
 					s = p.read(s);
 					parent->right = p.geteNFA();
+					find_accept(parent->right);
+					//state->flag = 0;
+					state->left = left;
 
 					return s.substr(1, s.length());
 				}
 				else if (s[0] == 'e')
 				{
-					//(()|e) ÇüÅÂ
-					right->isAccept = true;
-					right->state = state_num++;
-					parent->right = right;
+					cout << "start (()|e) " << endl;
+					parent->right = left;
 
 					return s.substr(2, s.length());
 				}
 
 			}
+#pragma endregion 
+
+#pragma region "(().)"
 			else if (s[0] == '.')
 			{
-				// (().) ÇüÅÂ
+				cout << "start (()." << endl;
+
+				// parent init
 				parent->left = p.geteNFA();
 
-				// parent->left 다 돌아서 isAccept false로 만들어 줘야함...
-
 				s = s.substr(1, s.length());
+
 				if (s[0] == '[')
 				{
-					//(().[]) ÇüÅÂ
+					cout << "start (().[])" << endl;
+
 					Bra b;
 					s = b.read(s);
-
-					// 고쳐야함..
-					//parent->left->left = b.geteNFA();
+					find_accept(parent->left);
+					//state->flag = 0;
+					state->left = b.geteNFA();
 
 					return s.substr(1, s.length());
 				}
 				else if (s[0] == '(')
 				{
-					// (().()) ÇüÅÂ
+					cout << "start (().())" << endl;
 					Pa p;
 					s = p.read(s);
-
-					// parent->left 다 돌아서맨 마지막 마다 다음거 연결..
-					//parent->left->left = p.geteNFA();
+					find_accept(parent->left);
+					//state->flag = 0;
+					state->left = p.geteNFA();
 
 					return s.substr(1, s.length());
 				}
 				else if (s[0] == 'e')
 				{
-					// (().e) ÇüÅÂ
+					cout << "start (().e)" << endl;
 
-					right->isAccept = true;
-					right->state = state_num++;
+					left->isAccept = true;
+					left->state = state_num++;
 
-					// 여기도 고쳐야함...
-					//parent->left->left = right;
-
+					find_accept(parent->left);
+					//state->flag = 0;
+					state->left = left;
 
 					return s.substr(2, s.length());
 				}
 			}
 		}
+#pragma endregion
+
+#pragma endregion
+
+#pragma region "(e"
 		else if (s[0] == 'e')
 		{
-			// (e ÇüÅÂ....
+			cout << "start (e" << endl;
+
+			// parent init
+			parent->state = state_num++;
+
 			left->isAccept = true;
 			left->state = state_num++;
-
+			
 			s = s.substr(1, s.length());
 
 			if (s[0] == ')')
 			{
-				// (e)* ÇüÅÂ
+				cout << "start (e)*" << endl;
+
 				parent->left = left;
-				parent->left->left = parent;
+				parent->left->left = left;
 
 				return s.substr(2, s.length());
 			}
 			else if (s[0] == '|')
 			{
-				// (e| ÇüÅÂ
-				parent->left = left;
+				cout << "start (e| " << endl;
+
 				s = s.substr(1, s.length());
 
 				if (s[0] == '[')
 				{
-					// (e|[]) ÇüÅÂ
+					cout << "start (e|[]) " << endl;
+
 					Bra b;
 					s = b.read(s);
-					parent->right = b.geteNFA();
+					parent->left = b.geteNFA();
+					find_accept(parent->left);
+					//state->flag = 0;
+					state->left = left;
+
+					parent->right = left;
 
 					return s.substr(1, s.length());
 				}
 				else if (s[0] == '(')
 				{
-					// (e|()) ÇüÅÂ
+					cout << "start (e|()) " << endl;
+
 					Pa p;
 					s = p.read(s);
-					parent->right = p.geteNFA();
+					parent->left = p.geteNFA();
+					find_accept(parent->left);
+					//state->flag = 0;
+					state->left = left;
+
+					parent->right = left;
 
 					return s.substr(1, s.length());
 				}
 				else if (s[0] == 'e')
 				{
-					// (e|e) ÇüÅÂ
-					right->isAccept = true;
-					right->state = state_num++;
-					parent->right = right;
+					cout << "start (e|e) " << endl;
+					parent->left = left;
+
+					state->isAccept = true;
+					state->state++;
+					parent->right = state;
 
 					return s.substr(2, s.length());
 				}
 			}
 			else if (s[0] == '.')
 			{
-				// (e. ÇüÅÂ
-				left->isAccept = false;
-				parent->left = left;
+				cout << "start (e." << endl;
+
 				s = s.substr(1, s.length());
 
 				if (s[0] == '[')
 				{
-					// (e.[]) ÇüÅÂ
+					cout << "start (e.[])" << endl;
+
 					Bra b;
 					s = b.read(s);
-					parent->left->left = b.geteNFA();
+					parent->left = b.geteNFA();
+					find_accept(parent->left);
+					//state->flag = 0;
+					state->left = left;
 
 					return s.substr(1, s.length());
 
 				}
 				else if (s[0] == '(')
 				{
-					// (e.()) ÇüÅÂ
+					cout << "start (e.())" << endl;
+
 					Pa p;
 					s = p.read(s);
-					parent->left->left = p.geteNFA();
+					parent->left = p.geteNFA();
+					find_accept(parent->left);
+					//state->flag = 0;
+					state->left = left;
 
 					return s.substr(1, s.length());
 				}
 				else if (s[0] == 'e')
 				{
-					// (e.e) ÇüÅÂ
-					right->isAccept = true;
-					right->state = state_num++;
+					cout << "start (e.e)" << endl;
 
-					parent->left->left = right;
+					left->isAccept = false;
+					parent->left = left;
+					state->isAccept = true;
+					state->state = state_num++;
+					parent->left->left = state;
 
 					return s.substr(2, s.length());
 				}
