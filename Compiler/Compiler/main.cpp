@@ -8,13 +8,13 @@ using namespace std;
 typedef struct eNFAs
 {
 	int state;
-	int edgeNum[10]; // = { -1 };		// 전부 -1 이면 'e' 라고 생각?
-	bool isAccept;  // = false;
-	struct eNFAs* left;  // = NULL;
-	struct eNFAs* right;  // = NULL;
+	int edgeNum[10];		// 전부 -1 이면 'e' 라고 생각?
+	bool isAccept;
+	struct eNFAs* left;  
+	struct eNFAs* right;
 }eNFA;
 
-// global variable..?
+// global variable
 extern int state_num = 0;
 
 // function declare
@@ -38,7 +38,7 @@ public:
 	{
 		int i = 0;
 		for (i = 0; i<10; i++)
-			state->edgeNum[i] = -1;		// 전부 -1 이면 'e' 라고 생각?
+			state->edgeNum[i] = -1;		// 전부 -1 이면 'e' 라고 생각
 		state->isAccept = false;
 		state->left = NULL;
 		state->right = NULL;
@@ -156,7 +156,7 @@ public:
 				// right set
 				parent->right = b.geteNFA();
 				find_accept(parent->right);
-				////state->flag = 0;
+				//
 				state->left = left;
 				state->right = parent->right;
 
@@ -176,7 +176,7 @@ public:
 
 				// state 연결
 				find_accept(parent->left);
-				////state->flag = 0;
+				//
 				state->left = left;
 
 				s = s.substr(1, s.length());
@@ -189,7 +189,7 @@ public:
 					s = b.read(s);
 					parent->right = b.geteNFA();
 					find_accept(parent->right);
-					//state->flag = 0;
+					
 					state->left = left;
 
 					return s.substr(1, s.length());
@@ -202,7 +202,7 @@ public:
 					s = p.read(s);
 					parent->right = p.geteNFA();
 					find_accept(parent->right);
-					//state->flag = 0;
+					
 					state->left = left;
 
 					return s.substr(1, s.length());
@@ -235,7 +235,6 @@ public:
 					Bra b;
 					s = b.read(s);
 					find_accept(parent->left);
-					//state->flag = 0;
 					state->left = b.geteNFA();
 
 					return s.substr(1, s.length());
@@ -247,7 +246,6 @@ public:
 					Pa p;
 					s = p.read(s);
 					find_accept(parent->left);
-					//state->flag = 0;
 					state->left = p.geteNFA();
 
 					return s.substr(1, s.length());
@@ -260,7 +258,6 @@ public:
 					left->state = state_num++;
 
 					find_accept(parent->left);
-					//state->flag = 0;
 					state->left = left;
 
 					return s.substr(2, s.length());
@@ -293,15 +290,7 @@ public:
 
 				// right set
 				parent->right = p.geteNFA();
-				/*
-				if (parent->right->left->isAccept)
-				{
-					parent->right->left->isAccept = false;
-					parent->right->left->left = left;
-					
-				}*/
 				find_accept(parent->right);
-				//state->flag = 0;
 				state->left = left;
 				state->right = parent->right;
 
@@ -320,7 +309,6 @@ public:
 
 				// state 연결
 				find_accept(parent->left);
-				//state->flag = 0;
 				state->left = left;
 
 				s = s.substr(1, s.length());
@@ -333,7 +321,6 @@ public:
 					s = b.read(s);
 					parent->right = b.geteNFA();
 					find_accept(parent->right);
-					//state->flag = 0;
 					state->left = left;
 
 					return s.substr(1, s.length());
@@ -346,7 +333,6 @@ public:
 					s = p.read(s);
 					parent->right = p.geteNFA();
 					find_accept(parent->right);
-					//state->flag = 0;
 					state->left = left;
 
 					return s.substr(1, s.length());
@@ -379,7 +365,6 @@ public:
 					Bra b;
 					s = b.read(s);
 					find_accept(parent->left);
-					//state->flag = 0;
 					state->left = b.geteNFA();
 
 					return s.substr(1, s.length());
@@ -390,7 +375,6 @@ public:
 					Pa p;
 					s = p.read(s);
 					find_accept(parent->left);
-					//state->flag = 0;
 					state->left = p.geteNFA();
 
 					return s.substr(1, s.length());
@@ -403,7 +387,6 @@ public:
 					left->state = state_num++;
 
 					find_accept(parent->left);
-					//state->flag = 0;
 					state->left = left;
 
 					return s.substr(2, s.length());
@@ -450,7 +433,6 @@ public:
 					s = b.read(s);
 					parent->left = b.geteNFA();
 					find_accept(parent->left);
-					//state->flag = 0;
 					state->left = left;
 
 					parent->right = left;
@@ -465,7 +447,6 @@ public:
 					s = p.read(s);
 					parent->left = p.geteNFA();
 					find_accept(parent->left);
-					//state->flag = 0;
 					state->left = left;
 
 					parent->right = left;
@@ -498,7 +479,6 @@ public:
 					s = b.read(s);
 					parent->left = b.geteNFA();
 					find_accept(parent->left);
-					//state->flag = 0;
 					state->left = left;
 
 					return s.substr(1, s.length());
@@ -511,8 +491,7 @@ public:
 					Pa p;
 					s = p.read(s);
 					parent->left = p.geteNFA();
-					find_accept(parent->left);
-					//state->flag = 0;
+					find_accept(parent->left);					
 					state->left = left;
 
 					return s.substr(1, s.length());
