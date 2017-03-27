@@ -1,6 +1,5 @@
 #include <iostream>
 #include <string>
-//#include <vector>
 
 // namespace
 using namespace std;
@@ -8,13 +7,11 @@ using namespace std;
 // struct
 typedef struct eNFAs
 {
-	// e À¸·Î ÃÊ±âÈ­
-	int state; 		// ¾î¶»°Ô ¾²Áö..?
-	char edge = 'e';		// [] edge °¡ ¿©·¯ °³ ÀÖ¾î¾ß ÇÔ..?
-	int edgeNum[10] = { -1 };
-	bool isAccept = false;
-	struct eNFAs* left = NULL;
-	struct eNFAs* right = NULL;
+	int state;
+	int edgeNum[10]; // = { -1 };		// 전부 -1 이면 'e' 라고 생각?
+	bool isAccept;  // = false;
+	struct eNFAs* left;  // = NULL;
+	struct eNFAs* right;  // = NULL;
 }eNFA;
 
 // global variable..?
@@ -32,24 +29,36 @@ class Bra;
 class Grammer
 {
 public:
-	//virtual void create() = 0;
 	virtual string read(string) = 0;
 	eNFA* geteNFA()
 	{
 		return parent;
 	}
+	void init_state(eNFA* state)
+	{
+		int i = 0;
+		for (i = 0; i<10; i++)
+			state->edgeNum[i] = -1;		// 전부 -1 이면 'e' 라고 생각?
+		state->isAccept = false;
+		state->left = NULL;
+		state->right = NULL;
+	}
 protected:
-	eNFA* parent = (eNFA*)malloc(sizeof(eNFA));		// °¢ ÀÎ½ºÅÏ½º ¸¸´Ù ÃÊ±âÈ­ ½ÃÄÑ¼­ »ç¿ëÇÒ °Å (Á¦ÀÏ ºÎ¸ð)
+	eNFA* parent = (eNFA*)malloc(sizeof(eNFA));
 	eNFA* left = (eNFA*)malloc(sizeof(eNFA));
 	eNFA* right = (eNFA*)malloc(sizeof(eNFA));
 };
 
-class Bra : public Grammer		// brakets
+class Bra : public Grammer      // brakets
 {
 public:
 	virtual string read(string s)
 	{
 		//[]
+		init_state(parent);
+		init_state(left);
+		init_state(right);
+
 		parent->state = state_num++;
 
 		cout << "in Bra [ :: " << parent->state << endl;
@@ -57,50 +66,53 @@ public:
 		int i = 0;
 		if (s[1] == '^')
 		{
-			parent->right = right;
-			
-			right->state = state_num++;	// state ..? right? left?
-
-
-			cout << "in Bra [] :: " << right->state << endl;
-			
-			i = 2;
-			while (s.at(i) != ']')
-			{
-				//edge = null 이나 특정한 문자로 초기화 한다.
-				right->edgeNum[i - 2] = s.at(i) - '0';
-				i++;
-			}
-			left->edge = '^';
-		}	
-		else
-		{
+			left->isAccept = true;
+			left->state = state_num++;
 			parent->left = left;
 
+			cout << "in Bra [^] :: " << left->state << endl;
+
+			i = 3;
+			int j = 0, k = 0;
+
+			while (j<10)
+			{
+				if (j != (s.at(2) - '0'))
+				{
+					left->edgeNum[k] = j;
+					k++;
+				}
+				j++;
+			}
+		}
+		else
+		{
+			left->isAccept = true;
 			left->state = state_num++;
+			parent->left = left;
 
 			cout << "in Bra [] :: " << left->state << endl;
-			
+
 			i = 1;
 			while (s.at(i) != ']')
 			{
-				//edge = null 이나 특정한 문자로 초기화 한다.
-				left->edgeNum[i - 2] = s.at(i) - '0';
+				left->edgeNum[i - 1] = s.at(i) - '0';
 				i++;
 			}
 		}
-
-		s = s.substr(i+1, s.length());
-
-		return s;
+		return s.substr(i + 1, s.length());
 	}
 };
+
 
 class Pa : public Grammer		// parentheses
 {
 public:
 	virtual string read(string s)
 	{
+		init_state(parent);
+		init_state(left);
+		init_state(right);
 
 		s = s.substr(1, s.length());
 
@@ -123,10 +135,22 @@ public:
 			{
 				cout << "end ([])*" << endl;
 
+				// parent->left -> e 일 때 accepting
+				left->isAccept = true;
+				left->state = state_num++;
+
+				parent->left = left;
+
 				// ([])* ÇüÅÂ
 				parent->left = b.geteNFA();
-				// ÀÌ°Å ¸Ç ¸¶Áö¸· ³ëµå¸¦ parent¿¡¿¬°á ÇÏ°í ½ÍÀ½..¤Ð
-				parent->left->left = parent;
+				parent->left->left->left = parent;
+
+				// 아무것도 없어도 ㅇㅋ
+				right->isAccept = true;
+				right->state = state_num++;
+				right->left = parent;
+
+				parent->right = right;
 
 				return s.substr(2, s.length());
 			}
@@ -168,6 +192,8 @@ public:
 				else if (s[0] == 'e')
 				{
 					// ([]|e) ÇüÅÂ
+					right->isAccept = true;
+					right->state = state_num++;
 					parent->right = right;
 
 					return s.substr(2, s.length());
@@ -177,13 +203,15 @@ public:
 			{
 				// ([].) ÇüÅÂ
 				parent->left = b.geteNFA();
+				parent->left->left->isAccept = false;
+
 				s = s.substr(1, s.length());
 				if (s[0] == '[')
 				{
 					// ([].[]) ÇüÅÂ
 					Bra b;
 					s = b.read(s);
-					parent->left->left = b.geteNFA();
+					parent->left->left->left = b.geteNFA();
 
 					return s.substr(1, s.length());
 				}
@@ -192,14 +220,16 @@ public:
 					// ([].()) ÇüÅÂ
 					Pa p;
 					s = p.read(s);
-					parent->left->left = p.geteNFA();
+					parent->left->left->left = p.geteNFA();
 
 					return s.substr(1, s.length());
 				}
 				else if (s[0] == 'e')
 				{
 					// ([].e) ÇüÅÂ
-					parent->left->left = right;
+					right->isAccept = true;
+					right->state = state_num++;
+					parent->left->left->left = right;
 
 					return s.substr(2, s.length());
 				}
@@ -249,6 +279,8 @@ public:
 				else if (s[0] == 'e')
 				{
 					//(()|e) ÇüÅÂ
+					right->isAccept = true;
+					right->state = state_num++;
 					parent->right = right;
 
 					return s.substr(2, s.length());
@@ -259,13 +291,18 @@ public:
 			{
 				// (().) ÇüÅÂ
 				parent->left = p.geteNFA();
+
+				// parent->left 다 돌아서 isAccept false로 만들어 줘야함...
+
 				s = s.substr(1, s.length());
 				if (s[0] == '[')
 				{
 					//(().[]) ÇüÅÂ
 					Bra b;
 					s = b.read(s);
-					parent->left->left = b.geteNFA();
+
+					// 고쳐야함..
+					//parent->left->left = b.geteNFA();
 
 					return s.substr(1, s.length());
 				}
@@ -274,14 +311,22 @@ public:
 					// (().()) ÇüÅÂ
 					Pa p;
 					s = p.read(s);
-					parent->left->left = p.geteNFA();
+
+					// parent->left 다 돌아서맨 마지막 마다 다음거 연결..
+					//parent->left->left = p.geteNFA();
 
 					return s.substr(1, s.length());
 				}
 				else if (s[0] == 'e')
 				{
 					// (().e) ÇüÅÂ
-					parent->left->left = right;
+
+					right->isAccept = true;
+					right->state = state_num++;
+
+					// 여기도 고쳐야함...
+					//parent->left->left = right;
+
 
 					return s.substr(2, s.length());
 				}
@@ -290,8 +335,11 @@ public:
 		else if (s[0] == 'e')
 		{
 			// (e ÇüÅÂ....
+			left->isAccept = true;
+			left->state = state_num++;
 
 			s = s.substr(1, s.length());
+
 			if (s[0] == ')')
 			{
 				// (e)* ÇüÅÂ
@@ -305,6 +353,7 @@ public:
 				// (e| ÇüÅÂ
 				parent->left = left;
 				s = s.substr(1, s.length());
+
 				if (s[0] == '[')
 				{
 					// (e|[]) ÇüÅÂ
@@ -326,6 +375,8 @@ public:
 				else if (s[0] == 'e')
 				{
 					// (e|e) ÇüÅÂ
+					right->isAccept = true;
+					right->state = state_num++;
 					parent->right = right;
 
 					return s.substr(2, s.length());
@@ -334,8 +385,10 @@ public:
 			else if (s[0] == '.')
 			{
 				// (e. ÇüÅÂ
+				left->isAccept = false;
 				parent->left = left;
 				s = s.substr(1, s.length());
+
 				if (s[0] == '[')
 				{
 					// (e.[]) ÇüÅÂ
@@ -358,6 +411,9 @@ public:
 				else if (s[0] == 'e')
 				{
 					// (e.e) ÇüÅÂ
+					right->isAccept = true;
+					right->state = state_num++;
+
 					parent->left->left = right;
 
 					return s.substr(2, s.length());
@@ -367,12 +423,16 @@ public:
 	}
 };
 
-// epsilon ¹»·Î ³ªÅ¸³»Áö...?  >> 'e'
+
+
+
+
 
 int main()
 {
 	// RE : regular expression
 	string RE;
+	eNFA* eNFA;
 
 	// input RE
 	cout << "Input Regular Expression :" << endl;
@@ -387,12 +447,11 @@ int main()
 	else
 	{
 		cout << " valid iput" << endl;
-		eNFA* eNFA = RE2eNFA(RE);
+		eNFA = RE2eNFA(RE);
 	}
-	
+
 	// eNFA -> DFA
-
-
+	cout << eNFA << endl;
 
 	// loop
 	while (1)
@@ -409,6 +468,9 @@ int main()
 
 	return 0;
 }
+
+
+
 
 // function
 eNFA* RE2eNFA(string S)
@@ -431,9 +493,8 @@ eNFA* RE2eNFA(string S)
 	{
 		// epsilon..input.... Ã³¸®
 		eNFA* state = (eNFA*)malloc(sizeof(eNFA));
-		//state->state = 0;
-		state->edge = 'e';
 		state->isAccept = true;
+		state->state = state_num++;
 		state->left = NULL;
 		state->right = NULL;
 		cout << "input is epsilon" << endl;
@@ -442,22 +503,25 @@ eNFA* RE2eNFA(string S)
 	}
 
 	cout << "valid check err" << endl;
-	//return NULL;
+	return NULL;
 }
+
+
+
 
 
 bool isValidRE(std::string str)
 {
 	//parentheses 관련 변수
-	int binOp = 0;		//operator *  개수
-	int unaOp = 0;		//operator . |  개수
-	int parFlag = 0;	//앞에서부터 읽을 때 '(' 의 개수가 ')' 보다 항상 많거나 같아야 한다.
-						//예를 들어 )))((( -> invalid
+	int binOp = 0;      //operator *  개수
+	int unaOp = 0;      //operator . |  개수
+	int parFlag = 0;   //앞에서부터 읽을 때 '(' 의 개수가 ')' 보다 항상 많거나 같아야 한다.
+					   //예를 들어 )))((( -> invalid
 
 	int parOpenCnt = 0;
-	int parCloseCnt = 0;	//최종 parentheses 개수 세기
+	int parCloseCnt = 0;   //최종 parentheses 개수 세기
 
-							//bracket 관련 변수
+						   //bracket 관련 변수
 	int braFlag = false;
 
 	int repeatOp = 0;
@@ -482,6 +546,7 @@ bool isValidRE(std::string str)
 			parOpenCnt++;
 			break;
 		case ')':
+			numRE++;
 			parFlag--;
 			if (braFlag == true || parFlag < 0)
 				validCheck == false;
@@ -509,7 +574,7 @@ bool isValidRE(std::string str)
 			{
 				binOp++;
 				numRE--;
-				if (str.at(i - 1) != 'e' && str.at(i - 1) != ')' && str.at(i - 1) != ']')
+				if (str.at(i - 1) != 'e' && str.at(i - 1) != ')' && str.at(i - 1) != ']' && str.at(i - 1) != '*')
 					validCheck = false;
 			}
 			break;
@@ -524,7 +589,7 @@ bool isValidRE(std::string str)
 			else braFlag = true;
 			break;
 		case ']':
-			if (braFlag != true || (number == false && exclude && (!number)))
+			if (braFlag != true || number == false || (exclude && (!number)))
 				validCheck = false;
 			else
 				braFlag = false;
@@ -535,8 +600,8 @@ bool isValidRE(std::string str)
 			break;
 		case '0': case '1': case '2': case '3': case '4':
 		case '5': case '6': case '7': case '8': case '9':
-			if (braFlag == false || (exclude && number))		//if bracket is not open
-				validCheck = false;		//invalid
+			if (braFlag == false || (exclude && number))      //if bracket is not open
+				validCheck = false;      //invalid
 			number = true;
 			break;
 		case '^':
@@ -567,11 +632,11 @@ bool isValidRE(std::string str)
 		}
 	}
 
-
 	//()-> 연산자 개수와 관련
 	if (parOpenCnt != parCloseCnt || parOpenCnt != (unaOp + binOp)
 		|| braFlag == true || !validCheck)
 	{
+
 		std::cout << "not RE" << std::endl;
 		return false;
 	}
@@ -579,5 +644,4 @@ bool isValidRE(std::string str)
 	{
 		return true;
 	}
-		
 }
