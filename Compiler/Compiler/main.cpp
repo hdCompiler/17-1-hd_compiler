@@ -17,7 +17,7 @@ int state_num = 0;
 
 void invalid()
 {
-	cout << "This string is invalid." << endl;
+	cout << "This string is not a language." << endl;
 }
 
 int main()
@@ -108,7 +108,7 @@ int main()
 			if (!isAccept)
 				invalid();
 			else
-				cout << "This string is valid input" << endl;
+				cout << "This string is a language" << endl;
 		}
 	}
 
