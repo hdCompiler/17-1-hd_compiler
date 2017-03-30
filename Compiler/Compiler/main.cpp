@@ -577,23 +577,6 @@ int main()
 
 	NFATran(NfaTable, height, width, eNFA);
 
-	/*
-	//확인용 출력
-	for (int i = 0; i < height; i++)
-	{
-		std::// cout << i << " - " << " : ";
-		for (int j = 0; j < width; j++)
-		{
-			std::// cout << " input: " << j << " ";
-			if (NfaTable[i][j] != 999)
-				std::// cout << NfaTable[i][j] << " ";
-			else
-				std::// cout << "X";
-		}
-		std::// cout << std::endl;
-	}
-	*/
-
 	vector<DFA> DFA_table;
 	DFA_table = NFA2DFA(NfaTable);
 
