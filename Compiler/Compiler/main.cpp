@@ -81,7 +81,12 @@ int main()
 
 		// input no!
 		if (S == "")
-			invalid();
+		{
+			if (DFA_table[0].isAccept == true)
+				cout << "This string is a language" << endl;
+			else
+				invalid();
+		}
 
 		// valid check
 		vector<int> state;

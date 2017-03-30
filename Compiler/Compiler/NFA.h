@@ -11,5 +11,5 @@ typedef struct eNFAs
 	struct eNFAs* right;
 }eNFA;
 
-bool isValidRE(std::string str);
+bool isValidRE(string str);
 eNFA* RE2eNFA(string S);
