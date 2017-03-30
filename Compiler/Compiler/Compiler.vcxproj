@@ -146,7 +146,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Bra.cpp" />
+    <ClCompile Include="DFA.cpp" />
+    <ClCompile Include="Grammer.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="NFA.cpp" />
+    <ClCompile Include="Pa.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Bra.h" />
+    <ClInclude Include="DFA.h" />
+    <ClInclude Include="Grammer.h" />
+    <ClInclude Include="NFA.h" />
+    <ClInclude Include="Pa.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
